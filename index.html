@@ -289,7 +289,23 @@ body{background:#000}
 .main{padding:0;gap:0;align-items:center}
 .slide-wrapper{padding:0}
 .slide{box-shadow:none!important;border-radius:0!important}
-/* download bar */
+/* tools */
+.mp-tools{position:fixed;left:14px;bottom:14px;z-index:9999;display:flex;gap:8px;flex-wrap:wrap}
+.mp-btn{border:0;cursor:pointer;font:600 13px/1 -apple-system,'Segoe UI',Arial,sans-serif;padding:10px 14px;border-radius:8px;background:#0b3d1f;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.mp-btn:hover{background:#116b36}
+.mp-btn.ghost{background:#fff;color:#0b3d1f}
+.mp-btn.ghost:hover{background:#e8f5e9}
+.mp-modal{position:fixed;inset:0;z-index:10000;display:none;background:rgba(0,0,0,.72)}
+.mp-modal.open{display:block}
+.mp-modal .mp-box{position:absolute;inset:4vh 4vw;background:#fff;border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.mp-modal .mp-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #e5e5e5;font:700 15px/1.2 -apple-system,'Segoe UI',Arial,sans-serif;color:#0b3d1f}
+.mp-modal .mp-x{border:0;background:#f2f2f2;border-radius:8px;width:34px;height:34px;font-size:20px;line-height:1;cursor:pointer}
+.mp-modal iframe{flex:1;width:100%;border:0;background:#fff}
+.mp-pre{margin:0;padding:20px 22px;overflow:auto;white-space:pre-wrap;font:15px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#111;flex:1}
+.mp-bar{padding:12px 16px;border-top:1px solid #e5e5e5;display:flex;gap:10px;justify-content:flex-end}
+.mp-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:#0b3d1f;color:#fff;font:600 14px/1 -apple-system,'Segoe UI',Arial,sans-serif;padding:12px 18px;border-radius:10px;opacity:0;pointer-events:none;transition:.25s;z-index:10001}
+.mp-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* download chip */
 .deck-download{position:fixed;right:14px;bottom:14px;z-index:9999;background:#0b3d1f;color:#fff;font:600 13px/1 -apple-system,'Segoe UI',Arial,sans-serif;padding:10px 14px;border-radius:8px;text-decoration:none;box-shadow:0 4px 14px rgba(0,0,0,.35)}
 .deck-download:hover{background:#116b36}
 </style>
@@ -1014,5 +1030,64 @@ body{background:#000}
 })();
 </script>
 <a class="deck-download" href="./second-pilot.pptx" download>Скачать .pptx</a>
+<textarea id="mp-prompt-src" readonly style="position:absolute;left:-9999px;top:-9999px">Сделай интерактивный одностраничник на тему «[тема]» для учеников [класс].
+1. Один HTML-файл, без внешних библиотек.
+2. Покажи пошагово, как это работает, с кнопками «Старт / Шаг».
+3. Добавь задания для учеников в конце.
+4. Стиль: крупно, просто, понятно школьнику.
+Сохрани как index.html и открой в браузере.</textarea>
+<div class="mp-tools">
+  <button class="mp-btn" id="mp-copy">Скопировать промпт</button>
+  <button class="mp-btn ghost" id="mp-show">Показать промпт</button>
+  <button class="mp-btn" id="mp-open-form">Открыть форму</button>
+</div>
+<div class="mp-modal" id="mp-prompt-modal">
+  <div class="mp-box">
+    <div class="mp-head"><span>Промпт для агента</span><button class="mp-x" data-close>&times;</button></div>
+    <pre class="mp-pre" id="mp-pre"></pre>
+    <div class="mp-bar"><button class="mp-btn" id="mp-copy2">Скопировать</button></div>
+  </div>
+</div>
+<div class="mp-modal" id="mp-form-modal">
+  <div class="mp-box">
+    <div class="mp-head"><span>Форма участника</span><button class="mp-x" data-close>&times;</button></div>
+    <iframe id="mp-frame" data-src="https://forms.yandex.ru/u/6a37dd3f02848f4b83112865/?iframe=true" title="Форма"></iframe>
+  </div>
+</div>
+<div class="mp-toast" id="mp-toast">Промпт скопирован</div>
+<script>
+(function(){
+  var src = document.getElementById('mp-prompt-src');
+  var text = src.value.replace(/^\n/, '');
+  document.getElementById('mp-pre').textContent = text;
+  function toast(){var t=document.getElementById('mp-toast');t.classList.add('show');setTimeout(function(){t.classList.remove('show');},1600);}
+  function copy(){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(toast, function(){fallback();});
+    } else { fallback(); }
+  }
+  function fallback(){
+    src.style.position='fixed';src.style.left='-9999px';
+    src.focus();src.select();
+    try{document.execCommand('copy');toast();}catch(e){}
+  }
+  document.getElementById('mp-copy').addEventListener('click',copy);
+  document.getElementById('mp-copy2').addEventListener('click',copy);
+  function open(id){document.getElementById(id).classList.add('open');}
+  function closeAll(){document.querySelectorAll('.mp-modal').forEach(function(m){m.classList.remove('open');});}
+  document.getElementById('mp-show').addEventListener('click',function(){open('mp-prompt-modal');});
+  document.getElementById('mp-open-form').addEventListener('click',function(){
+    var f=document.getElementById('mp-frame');
+    if(!f.getAttribute('src')) f.setAttribute('src',f.getAttribute('data-src'));
+    open('mp-form-modal');
+  });
+  document.querySelectorAll('.mp-modal').forEach(function(m){
+    m.addEventListener('click',function(e){if(e.target===m)closeAll();});
+    m.querySelectorAll('[data-close]').forEach(function(b){b.addEventListener('click',closeAll);});
+  });
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')closeAll();});
+})();
+</script>
+
 </body>
 </html>
