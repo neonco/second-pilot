@@ -301,6 +301,8 @@ body{background:#000}
 .mp-modal .mp-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #e5e5e5;font:700 15px/1.2 -apple-system,'Segoe UI',Arial,sans-serif;color:#0b3d1f}
 .mp-modal .mp-x{border:0;background:#f2f2f2;border-radius:8px;width:34px;height:34px;font-size:20px;line-height:1;cursor:pointer}
 .mp-modal iframe{flex:1;width:100%;border:0;background:#fff}
+.mp-form-scroll{flex:1;overflow-y:scroll;overflow-x:hidden;-webkit-overflow-scrolling:touch;background:#fff}
+.mp-form-scroll iframe{width:100%;min-height:100%;border:0;background:#fff;display:block}
 .mp-pre{margin:0;padding:20px 22px;overflow:auto;white-space:pre-wrap;font:15px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#111;flex:1}
 .mp-bar{padding:12px 16px;border-top:1px solid #e5e5e5;display:flex;gap:10px;justify-content:flex-end}
 .mp-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:#0b3d1f;color:#fff;font:600 14px/1 -apple-system,'Segoe UI',Arial,sans-serif;padding:12px 18px;border-radius:10px;opacity:0;pointer-events:none;transition:.25s;z-index:10001}
@@ -1086,7 +1088,7 @@ body{background:#000}
 <div class="mp-modal" id="mp-form-modal">
   <div class="mp-box">
     <div class="mp-head"><span>Форма участника</span><button class="mp-x" data-close>&times;</button></div>
-    <iframe id="mp-frame" data-src="https://forms.yandex.ru/u/6a37dd3f02848f4b83112865/?iframe=true" title="Форма"></iframe>
+    <div class="mp-form-scroll" id="mp-form-scroll"><iframe id="mp-frame" data-src="https://forms.yandex.ru/u/6a37dd3f02848f4b83112865/?iframe=true" title="Форма" scrolling="yes"></iframe></div>
   </div>
 </div>
 <div class="mp-toast" id="mp-toast">Промпт скопирован</div>
@@ -1121,6 +1123,15 @@ body{background:#000}
     m.querySelectorAll('[data-close]').forEach(function(b){b.addEventListener('click',closeAll);});
   });
   document.addEventListener('keydown',function(e){if(e.key==='Escape')closeAll();});
+  // Яндекс-форма сообщает свою полную высоту (postMessage от embed-протокола):
+  // растягиваем iframe и отдаём прокрутку контейнеру со скроллом справа.
+  window.addEventListener('message',function(e){
+    var data=e.data;
+    if(typeof data==='string'){try{data=JSON.parse(data);}catch(err){return;}}
+    if(!data||typeof data!=='object')return;
+    var h=data['iframe-height'];
+    if(h){var f=document.getElementById('mp-frame');if(f)f.style.height=parseInt(h,10)+'px';}
+  });
 })();
 </script>
 
